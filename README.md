@@ -68,6 +68,9 @@ python eval_wsj.py --ss --cfg PATH_TO_CONFIG --saved_dict PATH_TO_PRETRAINED_DIC
 # Evaluation on human motion data
 python eval_h36m.py --cfg PATH_TO_CONFIG --saved_dict PATH_TO_PRETRAINED_DICT
 python eval_h36m.py --ss --cfg PATH_TO_CONFIG --saved_dict PATH_TO_PRETRAINED_DICT # schedule sampling
+
+# Evaluation on rat hippocampus data
+python3 eval_neural.py --cfg saved_model/ --saved_dict saved_model/ 
 ```
 
 ## Bibtex

@@ -202,7 +202,7 @@ class DKF(nn.Module):
         return torch.addcmul(mean, eps, std)
 
 
-    def inference(self, x):
+    def  inference(self, x):
         
         seq_len = x.shape[0]
         batch_size = x.shape[1]
@@ -259,9 +259,9 @@ class DKF(nn.Module):
         # 1. z_t to y_t
         y = self.mlp_z_x(z)
         y = self.gen_out(y)
-        
+
         return y
-    
+
 
     def forward(self, x):
         

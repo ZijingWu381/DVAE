@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/DVAE.iml" filepath="$PROJECT_DIR$/.idea/DVAE.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../pi-vae/.idea/pi-vae.iml" filepath="$PROJECT_DIR$/../pi-vae/.idea/pi-vae.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../NerDS_Lab/worm_posture_dynamics/.idea/worm_posture_dynamics.iml" filepath="$PROJECT_DIR$/../../NerDS_Lab/worm_posture_dynamics/.idea/worm_posture_dynamics.iml" />
+    </modules>
+  </component>
+</project>

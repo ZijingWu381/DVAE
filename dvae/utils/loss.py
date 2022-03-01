@@ -33,6 +33,15 @@ def loss_MPJPE(x, y, nfeats=3):
     ret = (x-y).norm(dim=-1).mean(dim=-1).sum()
     return ret
 
+def loss_LogLik(x, y):
+    # seq_len, bs, _ = x.shape
+    # x = x.reshape()
+    # log_likelihood = torch.sum(y - x * torch.log(y), dim=-1)
+    y = torch.clamp(y, min=1e-7, max=1e7)
+    log_likelihood = torch.sum(y - x * torch.log(y), dim=-1).sum()
+
+    return log_likelihood
+
 # def loss_ISD(x, y):
 #     seq_len, bs, _ = x.shape
 #     ret = torch.sum( x/y - torch.log(x/y) - 1)

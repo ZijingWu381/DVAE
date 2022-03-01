@@ -7,9 +7,9 @@ License agreement in LICENSE.txt
 """
 
 import numpy as np
-import soundfile as sf
-from pypesq import pesq
-from pystoi import stoi
+# import soundfile as sf
+# from pypesq import pesq
+# from pystoi import stoi
 
 
 def compute_median(data):
