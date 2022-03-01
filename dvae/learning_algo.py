@@ -19,7 +19,7 @@ import torch
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-from .utils import myconf, get_logger, loss_ISD, loss_KLD, loss_MPJPE, loss_LogLik
+from .utils import myconf, get_logger, loss_ISD, loss_KLD, loss_MPJPE, loss_LogLik, set_random_seeds
 from .dataset import h36m_dataset, rat_dataset, speech_dataset
 from .model import build_VAE, build_DKF, build_DKFL, build_STORN, build_VRNN, build_SRNN, build_RVAE, build_DSAE
 
@@ -34,6 +34,8 @@ class LearningAlgorithm():
     """
 
     def __init__(self, params):
+        # Set random seeds
+        set_random_seeds(params['seed'])
         # Load config parser
         self.params = params
         self.config_file = self.params['cfg']
@@ -51,6 +53,7 @@ class LearningAlgorithm():
         # Load model parameters
         self.use_cuda = self.cfg.getboolean('Training', 'use_cuda')
         self.device = 'cuda' if torch.cuda.is_available() and self.use_cuda else 'cpu'
+
 
 
     def build_model(self):

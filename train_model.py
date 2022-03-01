@@ -20,6 +20,8 @@ class Options:
     def _initial(self):
         # Basic config file
         self.parser.add_argument('--cfg', type=str, default=None, help='config path')
+        # Random seed
+        self.parser.add_argument('--seed', type=int, default=666, help='random seed')
         # Schedule sampling
         self.parser.add_argument('--ss', action='store_true', help='schedule sampling')
         self.parser.add_argument('--use_pretrain', action='store_true', help='if use pretrain')
