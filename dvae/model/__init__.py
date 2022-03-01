@@ -3,6 +3,7 @@
 
 from .vae import build_VAE
 from .dkf import build_DKF
+from .dkfl import build_DKFL
 from .kvae import build_KVAE
 from .storn import build_STORN
 from .vrnn import build_VRNN

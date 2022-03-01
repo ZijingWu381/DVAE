@@ -5,6 +5,8 @@ Copyright (c) 2020 by Inria
 Authoried by Xiaoyu BIE (xiaoyu.bie@inrai.fr)
 License agreement in LICENSE.txt
 """
+import datetime
+
 import scipy.io as sio
 
 
@@ -36,6 +38,7 @@ class Options:
         self.parser.add_argument('--ss', action='store_true', help='schedule sampling')
         self.parser.add_argument('--cfg', type=str, default=None, help='config path')
         self.parser.add_argument('--saved_dict', type=str, default=None, help='trained model dict')
+        self.parser.add_argument('--date', type=str, default=None, help='date and time when save training')
         # Dataset
         self.parser.add_argument('--test_dir', type=str, default='./data/clean_speech/wsj0_si_et_05', help='test dataset')
         # Restuls directory
@@ -61,9 +64,17 @@ cfg = learning_algo.cfg
 print('Total params: %.2fM' % (sum(p.numel() for p in dvae.parameters()) / 1000000.0))
 
 
-
+# Load configs
 data_path = cfg.get('User', 'data_path')
 sequence_len = cfg.getint('DataFrame', 'sequence_len')
+dataset_name = cfg.get('DataFrame', 'dataset_name')
+
+saved_root = cfg.get('User', 'saved_root')
+z_dim = cfg.getint('Network','z_dim')
+tag = cfg.get('Network', 'tag')
+date = '2022-03-' + params["date"]
+filename = "{}_{}_{}_z_dim={}".format(dataset_name, date, tag, z_dim)
+save_dir = os.path.join(saved_root, filename) + '/'
 
 rat_data = sio.loadmat(data_path)
 
@@ -127,8 +138,11 @@ ll = 11
 hd_bins = np.linspace(0, 1.6, ll)
 select = np.concatenate(u_all)[:, 1] == 1
 tc1 = get_tc_rd(z_mean[select], np.concatenate(u_all)[select, 0], hd_bins)
+# plt.plot(np.concatenate(u_all)[select, 0], color='r')
+
 select = np.concatenate(u_all)[:, 2] == 1
 tc2 = get_tc_rd(z_mean[select], np.concatenate(u_all)[select, 0], hd_bins)
+# plt.plot(np.concatenate(u_all)[select, 0], color='b')
 
 dis_mat = np.zeros((len(tc1), len(tc2)))
 for jj in range(len(tc1)):
@@ -139,6 +153,7 @@ fig = plt.figure(figsize=(5.5, 4))
 ax = plt.subplot(111)
 # fig.add_subplot(111, projection='3d')
 fsz = 14
+
 
 ## learn locations
 select = np.concatenate(u_all)[:ll, 1] == 1
@@ -188,4 +203,5 @@ plt.setp(ax.get_yticklabels(), fontsize=fsz)
 ax.xaxis.set_major_locator(ticker.MaxNLocator(nbins=4, min_n_ticks=4, prune=None))
 ax.yaxis.set_major_locator(ticker.MaxNLocator(nbins=4, min_n_ticks=4, prune=None))
 
+plt.savefig(save_dir + "z")
 plt.show()

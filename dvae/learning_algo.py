@@ -21,7 +21,7 @@ from tqdm import tqdm
 
 from .utils import myconf, get_logger, loss_ISD, loss_KLD, loss_MPJPE, loss_LogLik
 from .dataset import h36m_dataset, rat_dataset, speech_dataset
-from .model import build_VAE, build_DKF, build_STORN, build_VRNN, build_SRNN, build_RVAE, build_DSAE
+from .model import build_VAE, build_DKF, build_DKFL, build_STORN, build_VRNN, build_SRNN, build_RVAE, build_DSAE
 
 
 class LearningAlgorithm():
@@ -58,6 +58,8 @@ class LearningAlgorithm():
             self.model = build_VAE(cfg=self.cfg, device=self.device)
         elif self.model_name == 'DKF':
             self.model = build_DKF(cfg=self.cfg, device=self.device)
+        elif self.model_name == 'DKFL':
+            self.model = build_DKFL(cfg=self.cfg, device=self.device)
         elif self.model_name == 'STORN':
             self.model = build_STORN(cfg=self.cfg, device=self.device)
         elif self.model_name == 'VRNN':
