@@ -35,7 +35,7 @@ class LearningAlgorithm():
 
     def __init__(self, params):
         # Set random seeds
-        set_random_seeds(params['seed'])
+        set_random_seeds(666)  # TODO add seed to config
         # Load config parser
         self.params = params
         self.config_file = self.params['cfg']

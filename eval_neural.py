@@ -24,9 +24,9 @@ import matplotlib.pyplot as plt
 from dvae.learning_algo import LearningAlgorithm
 from dvae.learning_algo_ss import LearningAlgorithm_ss
 from dvae.utils.eval_metric import compute_median, EvalMetrics
+from dvae.utils.random_seeders import set_random_seeds
 
-torch.manual_seed(0)
-np.random.seed(0)
+set_random_seeds(666)
 
 class Options:
     def __init__(self):

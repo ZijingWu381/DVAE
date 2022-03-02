@@ -74,7 +74,14 @@ class RatHippocampus(data.Dataset):
         parameter 'index'
         """
         # TODO deal with inconsistent sequence length
-        sample = torch.FloatTensor(self.x[index][:self.sequence_len])
+        sample = torch.FloatTensor(self.x[index])
+        if self.sequence_len <= self.min_seq_len:
+            sample = sample[:self.sequence_len]
+        elif self.sequence_len >= self.max_seq_len:
+            s_len, x_dim = sample.shape
+            zeros = torch.zeros(self.sequence_len - s_len, x_dim)
+            sample = torch.cat([sample, zeros], 0)
+            assert sample.shape[0] == self.max_seq_len
 
         return sample
 
@@ -99,6 +106,11 @@ class RatHippocampus(data.Dataset):
         x = np.array(np.array_split(spike_by_neuron_use, idx_split[1:-1], axis=0))
         for ii in range(len(u)):
             u[ii][:, int(ii % 2) + 1] = 1
+
+        # get max and min sequence length
+        self.max_seq_len = np.max([len(trial) for trial in x])  # 351
+        self.min_seq_len = np.min([len(trial) for trial in x])  # 70
+        assert self.min_seq_len == 70
 
         u = u[self.splits[0]: self.splits[1]]
         x = x[self.splits[0]: self.splits[1]]
