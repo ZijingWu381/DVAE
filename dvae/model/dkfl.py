@@ -40,7 +40,12 @@ def build_DKFL(cfg, device='cpu'):
     dim_RNN_gx = cfg.getint('Network', 'dim_RNN_gx')
     num_RNN_gx = cfg.getint('Network', 'num_RNN_gx')
     bidir_gx = cfg.getboolean('Network', 'bidir_gx')
-    dense_ztm1_g = [] if cfg.get('Network', 'dense_ztm1_g') == '' else [int(i) for i in cfg.get('Network', 'dense_ztm1_g').split(',')]
+    try:
+        dense_ztmp_g = [] if cfg.get('Network', 'dense_ztmp_g') == '' else [int(i) for i in cfg.get('Network', 'dense_ztmp_g').split(',')]
+    except:
+        dense_ztmp_g = [] if cfg.get('Network', 'dense_ztm1_g') == '' else [int(i) for i in
+                                                                            cfg.get('Network', 'dense_ztm1_g').split(
+                                                                                ',')]
     dense_g_z = [] if cfg.get('Network', 'dense_g_z') == '' else [int(i) for i in cfg.get('Network', 'dense_g_z').split(',')]
     # Generation
     dense_z_x = [] if cfg.get('Network', 'dense_z_x') == '' else [int(i) for i in cfg.get('Network', 'dense_z_x').split(',')]
@@ -50,9 +55,9 @@ def build_DKFL(cfg, device='cpu'):
 
     # Build model
     model = DKF(x_dim=x_dim, z_dim=z_dim, lag=lag, activation=activation,
-                dense_x_gx=dense_x_gx, dim_RNN_gx=dim_RNN_gx, 
+                dense_x_gx=dense_x_gx, dim_RNN_gx=dim_RNN_gx,
                 num_RNN_gx=num_RNN_gx, bidir_gx=bidir_gx,
-                dense_ztm1_g=dense_ztm1_g, dense_g_z=dense_g_z,
+                dense_ztmp_g=dense_ztmp_g, dense_g_z=dense_g_z,
                 dense_z_x=dense_z_x,
                 dropout_p=dropout_p, beta=beta, device=device).to(device)
 
@@ -70,11 +75,11 @@ def stair_zero_pad(x, lags):
             [[0.4031]]])
 
     stair_zero_pad(x, 2)=
-     tensor([[[0.0000, 0.0000]],
+    tensor([[[0.0000, 0.0000]],
 
-            [[0.7576, 0.0000]],
+        [[0.0000, 0.7576]],
 
-            [[0.2793, 0.7576]]])
+        [[0.7576, 0.2793]]])
     """
     x_prev = []
 
@@ -85,7 +90,7 @@ def stair_zero_pad(x, lags):
         if lag == 1:
             x_prev = x_tmp
         else:
-            x_prev = torch.cat([x_prev, x_tmp], -1)
+            x_prev = torch.cat([x_tmp, x_prev], -1)
     return x_prev
 
 
@@ -93,7 +98,7 @@ class DKF(nn.Module):
 
     def __init__(self, x_dim, z_dim=16, lag=1, activation='tanh',
                  dense_x_gx=[], dim_RNN_gx=128, num_RNN_gx=1, bidir_gx=False,
-                 dense_ztm1_g=[], dense_g_z=[],
+                 dense_ztmp_g=[], dense_g_z=[],
                  dense_z_x=[128,128],
                  dropout_p = 0, beta=1, device='cpu'):
 
@@ -117,7 +122,7 @@ class DKF(nn.Module):
         self.dim_RNN_gx = dim_RNN_gx
         self.num_RNN_gx = num_RNN_gx
         self.bidir_gx = bidir_gx
-        self.dense_ztm1_g = dense_ztm1_g
+        self.dense_ztm1_g = dense_ztmp_g
         self.dense_g_z = dense_g_z
         ### Generation x
         self.dense_z_x = dense_z_x
@@ -165,7 +170,7 @@ class DKF(nn.Module):
             dic_layers['linear_last'] = nn.Linear(self.dense_ztm1_g[-1], self.dim_RNN_gx)
             dic_layers['activation_last'] = self.activation
             dic_layers['dropout_last'+str(n)] = nn.Dropout(p=self.dropout_p)
-        self.mlp_ztm1_g = nn.Sequential(dic_layers)
+        self.mlp_ztmp_g = nn.Sequential(dic_layers) #TODO ztmp
         # 3. g_t to z_t
         dic_layers = OrderedDict()
         if len(self.dense_g_z) == 0:
@@ -189,7 +194,7 @@ class DKF(nn.Module):
         ######################
         # 1. Gating Unit
         dic_layers = OrderedDict()
-        gen_z_dim = self.z_dim * self.lag
+        gen_z_dim = self.z_dim * 1  # lag=1 to conform with original implementation
 
         dic_layers['linear1'] = nn.Linear(gen_z_dim , gen_z_dim)
         dic_layers['ReLU'] = nn.ReLU()
@@ -245,17 +250,20 @@ class DKF(nn.Module):
         z_mean = torch.zeros((seq_len, batch_size, self.z_dim)).to(self.device)
         z_logvar = torch.zeros((seq_len, batch_size, self.z_dim)).to(self.device)
         z = torch.zeros((seq_len, batch_size, self.z_dim)).to(self.device)
-        z_t = torch.zeros((batch_size, self.z_dim)).to(self.device)
+        z_t = torch.zeros((self.lag, batch_size, self.z_dim)).to(self.device)
+        z_tmp = torch.zeros((self.lag, batch_size, self.z_dim)).to(self.device)    # z_t-p...z_t-1
+
 
         # 1. x_t to g_t, g_t and z_prev to z_t
         x_g = self.mlp_x_gx(x)
         if self.bidir_gx:
+            raise NotImplemented("Please implement to allow time lag > 1")
             g, _ = self.rnn_gx(x_g)
             g = g.view(seq_len, batch_size, 2, self.dim_RNN_gx)
             g_forward = g[:,:,0,:]
             g_backward = g[:,:,1,:]
             for t in range(seq_len):
-                g_t = (self.mlp_ztm1_g(z_t) + g_forward[t,:,:] + g_backward[t,:,:]) / 3
+                g_t = (self.mlp_ztmp_g(z_t) + g_forward[t, :, :] + g_backward[t, :, :]) / 3
                 g_z = self.mlp_g_z(g_t)
                 z_mean[t,:,:] = self.inf_mean(g_z)
                 z_logvar[t,:,:] = self.inf_logvar(g_z)
@@ -266,13 +274,15 @@ class DKF(nn.Module):
             g, _ = self.rnn_gx(torch.flip(x_g, [0]))
             g = torch.flip(g, [0])
             for t in range(seq_len):
-                g_t = (self.mlp_ztm1_g(z_t) + g[t,:,:]) / 2
+                g_t = (torch.sum(self.mlp_ztmp_g(z_tmp), dim=0) + g[t, :, :]) / (1 + self.lag)    #TODO what is the divider?
                 g_z = self.mlp_g_z(g_t)
                 z_mean[t,:,:] = self.inf_mean(g_z)
                 z_logvar[t,:,:] = self.inf_logvar(g_z)
                 z_t = self.reparameterization(z_mean[t,:,:], z_logvar[t,:,:])
                 # z_t = z_mean[t,:,:]
                 z[t,:,:] = z_t
+                z_tmp = torch.cat([z_tmp[1:, :, :].clone(), torch.unsqueeze(z_t, 0)], dim=0)
+                # print(z_tmp.shape)  # (lag, bs, z_dim)
 
         return z, z_mean, z_logvar
     
@@ -302,10 +312,12 @@ class DKF(nn.Module):
         # need input:  (seq_len, batch_size, x_dim)
         _, batch_size, _ = x.shape
         self.z, self.z_mean, self.z_logvar = self.inference(x)
-        
-        z_prev = stair_zero_pad(self.z, self.lag)
-        
-        self.z_mean_p, self.z_logvar_p = self.generation_z(z_prev)
+
+        z_0 = torch.zeros(1, batch_size, self.z_dim).to(self.device)
+        z_tm1 = torch.cat([z_0, self.z[:-1, :, :]], 0)
+        z_prev = stair_zero_pad(self.z, 1)   # lag=1 to conform with original implementation
+        print(z_prev.shape)
+        self.z_mean_p, self.z_logvar_p = self.generation_z(z_tm1)
         y = self.generation_x(self.z)
 
         return y
@@ -320,7 +332,7 @@ class DKF(nn.Module):
             info.append(layer)
         info.append(self.rnn_gx)
         info.append('>>>> z_prev to g_x')
-        info.append(self.mlp_ztm1_g)
+        info.append(self.mlp_ztmp_g)
         info.append('>>>> g_x to z_t')
         for layer in self.mlp_g_z:
             info.append(layer)
@@ -347,21 +359,21 @@ class DKF(nn.Module):
 
         return info
 
-
-if __name__ == '__main__':
-    x_dim = 513
-    z_dim = 16
-    device = 'cpu'
-    dkf = DKF(x_dim=x_dim, z_dim=z_dim).to(device)
-
-    x = torch.ones((2,513,3))
-    y, z_mean, z_logvar, z_mean_p, z_logvar_p, z = dkf.forward(x)
-
-    def loss_function(recon_x, x, mu, logvar, mu_prior, logvar_prior):
-        recon = torch.sum(  x/recon_x - torch.log(x/recon_x) - 1 ) 
-        KLD = -0.5 * torch.sum(logvar - logvar_prior - torch.div((logvar.exp() + (mu - mu_prior).pow(2)), logvar_prior.exp()))
-        return recon + KLD
-
-    loss = loss_function(y,x,z_mean,z_logvar,z_mean_p,z_logvar_p)/6
-
-    print(loss)
+#
+# if __name__ == '__main__':
+#     x_dim = 513
+#     z_dim = 16
+#     device = 'cpu'
+#     dkf = DKF(x_dim=x_dim, z_dim=z_dim).to(device)
+#
+#     x = torch.ones((2,513,3))
+#     y, z_mean, z_logvar, z_mean_p, z_logvar_p, z = dkf.forward(x)
+#
+#     def loss_function(recon_x, x, mu, logvar, mu_prior, logvar_prior):
+#         recon = torch.sum(  x/recon_x - torch.log(x/recon_x) - 1 )
+#         KLD = -0.5 * torch.sum(logvar - logvar_prior - torch.div((logvar.exp() + (mu - mu_prior).pow(2)), logvar_prior.exp()))
+#         return recon + KLD
+#
+#     loss = loss_function(y,x,z_mean,z_logvar,z_mean_p,z_logvar_p)/6
+#
+#     print(loss)

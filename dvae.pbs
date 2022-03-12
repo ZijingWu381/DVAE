@@ -10,7 +10,7 @@
 
 #PBS -A GT-awu36
 
-#PBS -l walltime=3:00:00
+#PBS -l walltime=5:00:00
 
 #PBS -l nodes=2:ppn=2
 
@@ -38,6 +38,6 @@ module load anaconda3/2019.10
 module load pytorch/1.4
 conda activate d-vae
 
-python3 train_model.py --cfg ./config/neural/cfg_dkf_bs16_lr_5e-4_lag1_fullseq.ini
+python3 train_model.py --cfg ./config/neural/cfg_dkf_lag5_updated.ini
 
 

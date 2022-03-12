@@ -92,12 +92,27 @@ u = np.array(
     )
 )
 x_all = np.array(np.array_split(spike_by_neuron_use, idx_split[1:-1], axis=0))
+trial_ls = [len(x) for x in x_all]
+num_trial = len(x_all)
+
 for ii in range(len(u)):
     u[ii][:, int(ii % 2) + 1] = 1
 
+# add zero samples by sequence length, will be remove when plotting
+max_seq_len = np.max([len(trial) for trial in x_all])  # 351
+min_seq_len = np.min([len(trial) for trial in x_all])  # 70
 temp = torch.zeros((len(x_all), sequence_len, x_all[0].shape[1]))
 for i, x in enumerate(x_all):
-    temp[i] = torch.FloatTensor(x[:sequence_len])
+    sample = torch.FloatTensor(x)
+    if sequence_len <= min_seq_len:
+        sample = sample[:sequence_len]
+    elif sequence_len >= max_seq_len:
+        s_len, x_dim = sample.shape
+        zeros = torch.zeros(sequence_len - s_len, x_dim)
+        sample = torch.cat([sample, zeros], 0)
+        assert sample.shape[0] == max_seq_len
+
+    temp[i] = sample
 
 x_all = temp
 x_all = x_all.permute(1, 0, 2)
@@ -107,7 +122,6 @@ with torch.no_grad():
     _, z_mean, _ = outputs
     z_mean = z_mean.permute(1, 0, 2).reshape(-1, 2).numpy()
 
-z_pred_all = z_mean
 
 def get_tc_rd(y, hd, hd_bins):  # compute empirical tunning curve of data
     tuning_curve = np.zeros((len(hd_bins) - 1, y.shape[1]))
@@ -121,15 +135,22 @@ def get_tc_rd(y, hd, hd_bins):  # compute empirical tunning curve of data
 # and the location information for shade
 # So we restore u_all, which should only be used
 # for these two purposes from now.
+temp = []
+ind = 0
+for ii in range(num_trial):
+    z_m = z_mean[ind:ind+trial_ls[ii]]
+    temp.append(z_m)
+    ind = ind + sequence_len
+
+z_mean = np.concatenate(temp)
+
+
+
 locations_vec = rat_data['loc'][0]
 u_all = np.array(
     np.array_split(np.hstack((locations_vec.reshape(-1, 1), np.zeros((locations_vec.shape[0], 2)))), idx_split[1:-1],
                    axis=0))
-temp = []
-for u in u_all:
-    temp.append(u[:sequence_len])
 
-u_all = temp
 for ii in range(len(u_all)):
     u_all[ii][:, int(ii % 2) + 1] = 1;
 
@@ -137,6 +158,8 @@ for ii in range(len(u_all)):
 ll = 11
 hd_bins = np.linspace(0, 1.6, ll)
 select = np.concatenate(u_all)[:, 1] == 1
+print(z_mean.shape)
+print(u_all.shape)
 tc1 = get_tc_rd(z_mean[select], np.concatenate(u_all)[select, 0], hd_bins)
 # plt.plot(np.concatenate(u_all)[select, 0], color='r')
 

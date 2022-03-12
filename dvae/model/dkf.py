@@ -268,9 +268,11 @@ class DKF(nn.Module):
         # need input:  (seq_len, batch_size, x_dim)
         _, batch_size, _ = x.shape
         self.z, self.z_mean, self.z_logvar = self.inference(x)
+
         z_0 = torch.zeros(1, batch_size, self.z_dim).to(self.device)
         z_tm1 = torch.cat([z_0, self.z[:-1, :,:]], 0)
         self.z_mean_p, self.z_logvar_p = self.generation_z(z_tm1)
+
         y = self.generation_x(self.z)
 
         return y
