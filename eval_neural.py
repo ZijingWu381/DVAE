@@ -135,10 +135,13 @@ def get_tc_rd(y, hd, hd_bins):  # compute empirical tunning curve of data
 # and the location information for shade
 # So we restore u_all, which should only be used
 # for these two purposes from now.
+
+
 temp = []
 ind = 0
 for ii in range(num_trial):
-    z_m = z_mean[ind:ind+trial_ls[ii]]
+    length = min(trial_ls[ii], sequence_len)
+    z_m = z_mean[ind:ind+length]
     temp.append(z_m)
     ind = ind + sequence_len
 
@@ -147,9 +150,15 @@ z_mean = np.concatenate(temp)
 
 
 locations_vec = rat_data['loc'][0]
+
 u_all = np.array(
     np.array_split(np.hstack((locations_vec.reshape(-1, 1), np.zeros((locations_vec.shape[0], 2)))), idx_split[1:-1],
                    axis=0))
+
+temp = []
+for u in u_all:
+    temp.append(u[:sequence_len])
+u_all = temp
 
 for ii in range(len(u_all)):
     u_all[ii][:, int(ii % 2) + 1] = 1;
@@ -159,7 +168,7 @@ ll = 11
 hd_bins = np.linspace(0, 1.6, ll)
 select = np.concatenate(u_all)[:, 1] == 1
 print(z_mean.shape)
-print(u_all.shape)
+# print(u_all.shape)
 tc1 = get_tc_rd(z_mean[select], np.concatenate(u_all)[select, 0], hd_bins)
 # plt.plot(np.concatenate(u_all)[select, 0], color='r')
 

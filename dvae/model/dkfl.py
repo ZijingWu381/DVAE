@@ -250,26 +250,27 @@ class DKF(nn.Module):
         z_mean = torch.zeros((seq_len, batch_size, self.z_dim)).to(self.device)
         z_logvar = torch.zeros((seq_len, batch_size, self.z_dim)).to(self.device)
         z = torch.zeros((seq_len, batch_size, self.z_dim)).to(self.device)
-        z_t = torch.zeros((self.lag, batch_size, self.z_dim)).to(self.device)
+        # z_t = torch.zeros((self.lag, batch_size, self.z_dim)).to(self.device)
         z_tmp = torch.zeros((self.lag, batch_size, self.z_dim)).to(self.device)    # z_t-p...z_t-1
 
 
         # 1. x_t to g_t, g_t and z_prev to z_t
         x_g = self.mlp_x_gx(x)
         if self.bidir_gx:
-            raise NotImplemented("Please implement to allow time lag > 1")
             g, _ = self.rnn_gx(x_g)
             g = g.view(seq_len, batch_size, 2, self.dim_RNN_gx)
             g_forward = g[:,:,0,:]
             g_backward = g[:,:,1,:]
             for t in range(seq_len):
-                g_t = (self.mlp_ztmp_g(z_t) + g_forward[t, :, :] + g_backward[t, :, :]) / 3
+                g_t = (torch.sum(self.mlp_ztmp_g(z_tmp), dim=0) + g_forward[t, :, :] + g_backward[t, :, :]) / (2 + self.lag)    #TODO what is the divider?
+                # g_t = (self.mlp_ztmp_g(z_t) + g_forward[t, :, :] + g_backward[t, :, :]) / 3
                 g_z = self.mlp_g_z(g_t)
                 z_mean[t,:,:] = self.inf_mean(g_z)
                 z_logvar[t,:,:] = self.inf_logvar(g_z)
                 z_t = self.reparameterization(z_mean[t,:,:], z_logvar[t,:,:]) 
                 # z_t = z_mean[t,:,:]
                 z[t,:,:] = z_t
+                z_tmp = torch.cat([z_tmp[1:, :, :].clone(), torch.unsqueeze(z_t, 0)], dim=0)
         else:
             g, _ = self.rnn_gx(torch.flip(x_g, [0]))
             g = torch.flip(g, [0])
@@ -316,7 +317,6 @@ class DKF(nn.Module):
         z_0 = torch.zeros(1, batch_size, self.z_dim).to(self.device)
         z_tm1 = torch.cat([z_0, self.z[:-1, :, :]], 0)
         z_prev = stair_zero_pad(self.z, 1)   # lag=1 to conform with original implementation
-        print(z_prev.shape)
         self.z_mean_p, self.z_logvar_p = self.generation_z(z_tm1)
         y = self.generation_x(self.z)
 
