@@ -79,7 +79,6 @@ class RatHippocampus(data.Dataset):
             s_len, x_dim = sample.shape
             zeros = torch.zeros(self.sequence_len - s_len, x_dim)
             sample = torch.cat([sample, zeros], 0)
-            assert sample.shape[0] == self.max_seq_len
         elif self.sequence_len <= len(sample):
             sample = sample[:self.sequence_len]
 
