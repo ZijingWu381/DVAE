@@ -9,3 +9,4 @@ data/*
 saved_model/*
 pretrained_models/*
 *.pbs
+config/*
