@@ -73,15 +73,23 @@ class RatHippocampus(data.Dataset):
         torch data loader will use this function to read ONE sample of data from a list that can be indexed by
         parameter 'index'
         """
-        # TODO deal with inconsistent sequence length
+
         sample = torch.FloatTensor(self.x[index])
-        if self.sequence_len <= self.min_seq_len:
-            sample = sample[:self.sequence_len]
-        elif self.sequence_len >= self.max_seq_len:
+        if self.sequence_len > len(sample):
             s_len, x_dim = sample.shape
             zeros = torch.zeros(self.sequence_len - s_len, x_dim)
             sample = torch.cat([sample, zeros], 0)
             assert sample.shape[0] == self.max_seq_len
+        elif self.sequence_len <= len(sample):
+            sample = sample[:self.sequence_len]
+
+        # if self.sequence_len <= self.min_seq_len:
+        #     sample = sample[:self.sequence_len]
+        # elif self.sequence_len >= self.max_seq_len:
+        #     s_len, x_dim = sample.shape
+        #     zeros = torch.zeros(self.sequence_len - s_len, x_dim)
+        #     sample = torch.cat([sample, zeros], 0)
+        #     assert sample.shape[0] == self.max_seq_len
 
         return sample
 
