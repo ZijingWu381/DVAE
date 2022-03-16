@@ -10,3 +10,5 @@ saved_model/*
 pretrained_models/*
 *.pbs
 config/*
+pbs*/
+eval_model/

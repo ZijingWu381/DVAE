@@ -70,6 +70,9 @@ sequence_len = cfg.getint('DataFrame', 'sequence_len')
 dataset_name = cfg.get('DataFrame', 'dataset_name')
 
 saved_root = cfg.get('User', 'saved_root')
+if saved_root == "./saved_model":
+    saved_root = "./eval_model"
+
 z_dim = cfg.getint('Network','z_dim')
 tag = cfg.get('Network', 'tag')
 date = '2022-03-' + params["date"]
