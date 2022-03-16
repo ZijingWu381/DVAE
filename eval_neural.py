@@ -104,13 +104,20 @@ min_seq_len = np.min([len(trial) for trial in x_all])  # 70
 temp = torch.zeros((len(x_all), sequence_len, x_all[0].shape[1]))
 for i, x in enumerate(x_all):
     sample = torch.FloatTensor(x)
-    if sequence_len <= min_seq_len:
+    if sequence_len <= len(sample):
         sample = sample[:sequence_len]
-    elif sequence_len >= max_seq_len:
+    elif sequence_len > len(sample):
         s_len, x_dim = sample.shape
         zeros = torch.zeros(sequence_len - s_len, x_dim)
         sample = torch.cat([sample, zeros], 0)
-        assert sample.shape[0] == max_seq_len
+
+    # if sequence_len <= min_seq_len:
+    #     sample = sample[:sequence_len]
+    # elif sequence_len >= max_seq_len:
+    #     s_len, x_dim = sample.shape
+    #     zeros = torch.zeros(sequence_len - s_len, x_dim)
+    #     sample = torch.cat([sample, zeros], 0)
+    #     assert sample.shape[0] == max_seq_len
 
     temp[i] = sample
 
