@@ -262,8 +262,8 @@ class DKF(nn.Module):
             g_forward = g[:,:,0,:]
             g_backward = g[:,:,1,:]
             for t in range(seq_len):
-                # g_t = (torch.mean(self.mlp_ztmp_g(z_tmp), dim=0) + g_forward[t, :, :] + g_backward[t, :, :]) / (2 + 1)    #TODO what is the divider?
-                g_t = (torch.sum(self.mlp_ztmp_g(z_tmp), dim=0) + g_forward[t, :, :] + g_backward[t, :, :]) / (2 + self.lag)    #TODO what is the divider?
+                g_t = (torch.mean(self.mlp_ztmp_g(z_tmp), dim=0) + g_forward[t, :, :] + g_backward[t, :, :]) / (2 + 1)    #TODO what is the divider?
+                # g_t = (torch.sum(self.mlp_ztmp_g(z_tmp), dim=0) + g_forward[t, :, :] + g_backward[t, :, :]) / (2 + self.lag)    #TODO what is the divider?
                 # g_t = (self.mlp_ztmp_g(z_t) + g_forward[t, :, :] + g_backward[t, :, :]) / 3
                 g_z = self.mlp_g_z(g_t)
                 z_mean[t,:,:] = self.inf_mean(g_z)
@@ -276,8 +276,8 @@ class DKF(nn.Module):
             g, _ = self.rnn_gx(torch.flip(x_g, [0]))
             g = torch.flip(g, [0])
             for t in range(seq_len):
-                # g_t = (torch.mean(self.mlp_ztmp_g(z_tmp), dim=0) + g[t, :, :]) / (1 + 1)    #TODO what is the divider?
-                g_t = (torch.sum(self.mlp_ztmp_g(z_tmp), dim=0) + g[t, :, :]) / (1 + self.lag)    #TODO what is the divider?
+                g_t = (torch.mean(self.mlp_ztmp_g(z_tmp), dim=0) + g[t, :, :]) / (1 + 1)    #TODO what is the divider?
+                # g_t = (torch.sum(self.mlp_ztmp_g(z_tmp), dim=0) + g[t, :, :]) / (1 + self.lag)    #TODO what is the divider?
                 g_z = self.mlp_g_z(g_t)
                 z_mean[t,:,:] = self.inf_mean(g_z)
                 z_logvar[t,:,:] = self.inf_logvar(g_z)
